@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
+
 @Entity
 @Table(name = "short_urls")
 @Getter
@@ -21,13 +23,17 @@ public class ShortUrl {
 	@Column(nullable = false, length = 2048)
 	private String originalUrl;
 
+	private Instant expiresAt;
+
 	public ShortUrl(
 			Long id,
 			String shortCode,
-			String originalUrl
+			String originalUrl,
+			Instant expiresAt
 	) {
 		this.id = id;
 		this.shortCode = shortCode;
 		this.originalUrl = originalUrl;
+		this.expiresAt = expiresAt;
 	}
 }

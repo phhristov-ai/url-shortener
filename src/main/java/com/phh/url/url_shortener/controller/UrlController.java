@@ -1,12 +1,16 @@
 package com.phh.url.url_shortener.controller;
 
+import com.phh.url.url_shortener.cache.RateLimiter;
 import com.phh.url.url_shortener.dto.CreateUrlRequest;
 import com.phh.url.url_shortener.dto.CreateUrlResponse;
 import com.phh.url.url_shortener.service.UrlService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URI;
 
@@ -15,16 +19,23 @@ import java.net.URI;
 public class UrlController {
 
 	private final UrlService urlService;
+	private final RateLimiter rateLimiter;
 
 	@PostMapping("/api/urls")
-	public ResponseEntity<CreateUrlResponse> shortenUrl(
-			@Valid @RequestBody CreateUrlRequest request
+	public CreateUrlResponse shortenUrl(
+			@RequestBody @Valid CreateUrlRequest request,
+			HttpServletRequest httpRequest
 	) {
+		String clientIp = httpRequest.getRemoteAddr();
 
-		CreateUrlResponse response =
-				urlService.shortenUrl(request);
+		if (!rateLimiter.isAllowed(clientIp)) {
+			throw new ResponseStatusException(
+					HttpStatus.TOO_MANY_REQUESTS,
+					"Rate limit exceeded"
+			);
+		}
 
-		return ResponseEntity.ok(response);
+		return urlService.shortenUrl(request);
 	}
 
 	@GetMapping("/{shortCode}")
